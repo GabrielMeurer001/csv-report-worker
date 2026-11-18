@@ -1,0 +1,58 @@
+services:
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/reports
+      SPRING_DATASOURCE_USERNAME: reports
+      SPRING_DATASOURCE_PASSWORD: reports-local
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: reports
+      SPRING_RABBITMQ_PASSWORD: reports-local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, 'http://127.0.0.1:8080/actuator/health']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: reports
+      POSTGRES_USER: reports
+      POSTGRES_PASSWORD: reports-local
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD, pg_isready, -h, '127.0.0.1', -U, reports, -d, reports]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  rabbitmq:
+    image: rabbitmq:4.2-management
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: reports
+      RABBITMQ_DEFAULT_PASS: reports-local
+    ports:
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: [CMD, rabbitmq-diagnostics, -q, check_port_connectivity]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  postgres-data:
+  rabbitmq-data:
