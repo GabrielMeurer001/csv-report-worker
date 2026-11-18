@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: csv-report-worker
+  servlet:
+    multipart:
+      max-file-size: 1MB
+      max-request-size: 2MB
+  rabbitmq:
+    connection-timeout: 2s
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        acknowledge-mode: manual
+        concurrency: 1
+        max-concurrency: 1
+        prefetch: 1
+        default-requeue-rejected: false
